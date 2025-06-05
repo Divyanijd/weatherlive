@@ -1,3 +1,5 @@
+require('dotenv').config(); // Load environment variables
+
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -5,12 +7,12 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-const API_KEY = '9afba4a2296a2776a4cc5cabc58d94be'; // Replace with your valid key
+const API_KEY = process.env.OPENWEATHER_API_KEY;
 
 app.use(cors());
 app.use(express.json());
 
-// Today's Weather (single day) — keep if you want
+// Today's Weather Endpoint
 app.get('/api/weather/today', async (req, res) => {
   const city = req.query.city || 'surat';
 
@@ -38,7 +40,7 @@ app.get('/api/weather/today', async (req, res) => {
   }
 });
 
-// New endpoint for 4-day forecast
+// 4-Day Forecast Endpoint
 app.get('/api/weather/forecast', async (req, res) => {
   const city = req.query.city || 'surat';
 
@@ -48,7 +50,6 @@ app.get('/api/weather/forecast', async (req, res) => {
     );
     const forecast = response.data;
 
-    // Group data by date (YYYY-MM-DD)
     const getDate = (dt_txt) => dt_txt.split(' ')[0];
     const dailyData = {};
     forecast.list.forEach(item => {
@@ -57,13 +58,9 @@ app.get('/api/weather/forecast', async (req, res) => {
       dailyData[date].push(item);
     });
 
-    // Today's date string
     const todayDate = new Date().toISOString().split('T')[0];
+    const days = Object.keys(dailyData).filter(date => date > todayDate).slice(0, 4);
 
-    // Get next 4 days (excluding today)
-    const days = Object.keys(dailyData).filter(date => date > todayDate).slice(1, 5);
-
-    // Prepare 4-day summary picking forecast closest to 12:00pm or first item
     const forecastData = days.map(date => {
       const dayEntries = dailyData[date];
       const middayEntry = dayEntries.find(e => e.dt_txt.includes('12:00:00')) || dayEntries[0];
